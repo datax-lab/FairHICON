@@ -156,25 +156,6 @@ def FairContrastiveLearning(common_embeddings, sex_specific_embeddings, mask_lts
             group_labels.extend([group_id] * views.shape[0])
             class_labels.extend([class_id] * views.shape[0])
             sensitive_labels.extend([sens_id] * views.shape[0])
-            
-    # groups_def = {
-    #     0: (common_embeddings, mask_nlts, 0, 0),
-    #     1: (sex_specific_embeddings, (mask_nlts) & (mask_ml), 0, 1),
-    #     2: (sex_specific_embeddings, (mask_nlts) & (mask_fml), 0, 2),
-    #     3: (common_embeddings, mask_lts, 1, 0),
-    #     4: (sex_specific_embeddings, (mask_lts) & (mask_ml), 1, 1),
-    #     5: (sex_specific_embeddings, (mask_lts) & (mask_fml), 1, 2)
-    # }
-    
-    # all_views, group_labels, class_labels, sensitive_labels = [], [], [], []
-    # for group_id in range(len(groups_def)):
-    #     embeds, mask, class_id, sens_id = groups_def[group_id]
-    #     views = embeds[mask]
-    #     if views.shape[0] > 0:
-    #         all_views.append(views)
-    #         group_labels.extend([group_id] * views.shape[0])
-    #         class_labels.extend([class_id] * views.shape[0])
-    #         sensitive_labels.extend([sens_id] * views.shape[0])
 
     if not all_views_proj:
         return torch.tensor(0.0, device=device), torch.tensor(0.0, device=device)
@@ -183,11 +164,6 @@ def FairContrastiveLearning(common_embeddings, sex_specific_embeddings, mask_lts
     group_labels = torch.tensor(group_labels, dtype=torch.long, device=device)
     class_labels = torch.tensor(class_labels, dtype=torch.long, device=device)
     sensitive_labels = torch.tensor(sensitive_labels, dtype=torch.long, device=device)
-
-#     all_views_tensor = torch.cat(all_views, dim=0)
-#     group_labels = torch.tensor(group_labels, dtype=torch.long, device=device)
-#     class_labels = torch.tensor(class_labels, dtype=torch.long, device=device)
-#     sensitive_labels = torch.tensor(sensitive_labels, dtype=torch.long, device=device)
     
     criterion1 = SupConLossGroupNorm(temperature=tau1)
     criterion2 = SupConAdapProtoHardLossGroupNorm(
@@ -199,10 +175,6 @@ def FairContrastiveLearning(common_embeddings, sex_specific_embeddings, mask_lts
     hcl_loss1_proj = criterion1(all_views_proj_tensor, class_labels)
     hcl_loss2_proj = criterion2(all_views_proj_tensor, group_labels, class_labels, sensitive_labels)
 
-    # hcl_loss1 = criterion1(all_views_tensor, class_labels)
-    # hcl_loss2 = criterion2(all_views_tensor, group_labels, class_labels, sensitive_labels)
-    
-    # --- Loss on REPRESENTATION (the new part) ---
     groups_def_rep = {
         0: (common_rep, mask_nlts, 0, 0),
         1: (specific_rep, (mask_nlts) & (mask_ml), 0, 1),
@@ -240,5 +212,3 @@ def FairContrastiveLearning(common_embeddings, sex_specific_embeddings, mask_lts
     final_hcl_loss2 = hcl_loss2_proj + alpha * hcl_loss2_rep
     
     return final_hcl_loss1, final_hcl_loss2
-    
-    # return hcl_loss1, hcl_loss2
